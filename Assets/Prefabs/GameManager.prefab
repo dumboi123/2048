@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3862795805590575269
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5510754226391750837}
+  - component: {fileID: 7072675163170439431}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5510754226391750837
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862795805590575269}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7072675163170439431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862795805590575269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e72630f189fee042b38e3bdf5ef40ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _nodePrefab: {fileID: 5084583184843486016, guid: 6191b052b37a6ca41aabd9f3f116ebac, type: 3}
+  _blockPrefab: {fileID: 5126047701228142605, guid: 69ffc05b242cbf9469ead714b19dc819, type: 3}
+  _boardPrefab: {fileID: 5726234857608764568, guid: 73222f80163410947a47907a6d1fc7d7, type: 3}
+  _textScoreUI: {fileID: 0}
+  _textBestScoreUI: {fileID: 0}
+  _buttonNew: {fileID: 0}
+  _buttonTryAgain: {fileID: 0}
+  _blurredScreen: {fileID: 0}
+  _textGameOver: {fileID: 0}
+  _types:
+  - Value: 2
+    Color: {r: 0, g: 1, b: 0, a: 1}
+  - Value: 4
+    Color: {r: 1, g: 0.38236123, b: 0.035848916, a: 1}
+  - Value: 8
+    Color: {r: 0.7882353, g: 0.15294115, b: 0.70871025, a: 1}
+  - Value: 16
+    Color: {r: 1, g: 0, b: 0, a: 1}
+  - Value: 32
+    Color: {r: 0.51259184, g: 0, b: 1, a: 1}
+  - Value: 64
+    Color: {r: 0, g: 0.25761905, b: 0.78431374, a: 1}
+  - Value: 128
+    Color: {r: 0.9882353, g: 0.48235294, b: 0.43068373, a: 1}
+  - Value: 256
+    Color: {r: 0.043396115, g: 1, b: 0.11738865, a: 1}
+  - Value: 512
+    Color: {r: 0.043137252, g: 0.9096923, b: 1, a: 1}
+  - Value: 1024
+    Color: {r: 0.94862974, g: 0.043137252, b: 1, a: 1}
+  - Value: 2048
+    Color: {r: 0.9490196, g: 0.04313727, b: 0.11478232, a: 1}
+  - Value: 4096
+    Color: {r: 0.04313727, g: 0.6669249, b: 0.9490196, a: 1}
+  - Value: 8192
+    Color: {r: 0.381132, g: 0.0021573198, b: 0.02848611, a: 1}
+  - Value: 16384
+    Color: {r: 0.003921569, g: 0.059871152, b: 0.38039216, a: 1}
+  - Value: 32768
+    Color: {r: 0.003921569, g: 0.3062358, b: 0.38039216, a: 1}
+  - Value: 65536
+    Color: {r: 0.003921569, g: 0.38039216, b: 0.041119985, a: 1}

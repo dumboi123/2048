@@ -3,54 +3,81 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
 
-
-    [SerializeField] private int _width = 4;
-    [SerializeField] private int _height = 4;
+    [Header("Prefabs")]
     [SerializeField] private Node _nodePrefab;
     [SerializeField] private Block _blockPrefab;
-
     [SerializeField] private SpriteRenderer _boardPrefab;
+
+    [Space(10)]
+    //====================================================
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI _textScoreUI;
+    [SerializeField] private TextMeshProUGUI _textBestScoreUI;
+    [SerializeField] private Button _buttonNew;
+    [SerializeField] private GameObject _buttonTryAgain;
+    [SerializeField] private Image _blurredScreen;
+    [SerializeField] private TextMeshProUGUI _textGameOver;
+
+    [Space(10)]
+    //====================================================
+
     [SerializeField] private List<BlockType> _types;
+
+
 
     private List<Node> _nodes;
     private List<Block> _blocks;
     private GameState _state;
     private byte _round;
+    private int _width, _height, _score, _bestScore;
     private float _moveDuration = 0.2f;
-
-    private BlockType GetBlockTypeByValue(int value) => _types.First(t => t.Value == value);
-    private Node GetNodeAtPosisition(Vector2 pos) => _nodes.FirstOrDefault(n => n.Pos == pos);
 
     void Awake()
     {
+        Screen.SetResolution(400,710,false);
+        CheckPlayerPrefs();
+        _score = 0;
         _round = 0;
+        _width = 4; _height = 4;
         _nodes = new List<Node>();
         _blocks = new List<Block>();
     }
 
     void Start()
     {
+        SetUI();
         GenerateGrid();
         GenerateBoard();
-        GenerateBlocks(4);
+        GenerateBlocks(3);
     }
 
     void Update()
     {
         if (_state != GameState.WaitingInput) return;
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) ShiftBlocks(Vector2.left);
-        if (Input.GetKeyDown(KeyCode.RightArrow)) ShiftBlocks(Vector2.right);
-        if (Input.GetKeyDown(KeyCode.UpArrow)) ShiftBlocks(Vector2.up);
-        if (Input.GetKeyDown(KeyCode.DownArrow)) ShiftBlocks(Vector2.down);
-
+        HandleInput();
     }
-
+    //=========================================SETTING UP=============================
+    private void CheckPlayerPrefs()
+    {
+        if (PlayerPrefs.HasKey("BestScore"))
+            _bestScore = PlayerPrefs.GetInt("BestScore");
+        else
+            _bestScore = 0;
+    }
+    private void SetUI()
+    {
+        _textScoreUI.text = _score.ToString();
+        _textBestScoreUI.text = _bestScore.ToString();
+    }
     private void GenerateGrid()
     {
         for (int i = 0; i < _width; i++)
@@ -71,19 +98,47 @@ public class GameManager : MonoBehaviour
         //set Camera
         Camera.main.transform.position = new Vector3(center.x, center.y, -10);
     }
-
     private void GenerateBlocks(int amount)
     {
         List<Node> freeNodes = _nodes.Where(n => n.OccupiedBlock == null).OrderBy(b => Random.value).ToList();
         foreach (var node in freeNodes.Take(amount))
-            GenerateBlock(node, Random.value > 0.6f ? 4 : 2);
+            GenerateBlock(node, Random.value > 0.7f ? 4 : 2);
 
-        if (freeNodes.Count() == 1)
+        if (freeNodes.Count() == 1 && !CheckSurrounding())
         {
+            ChangeState(GameState.Lose);
             return;
         }
         ChangeState(GameState.WaitingInput);
     }
+    private bool CheckSurrounding()
+    {
+        foreach (var block in _blocks)
+        {
+            Node destinationNode = block.Node;
+            block.SetBlock(destinationNode);
+
+            var freeNodeLeft = GetNodeAtPosisition(destinationNode.Pos + Vector2.left);
+            var freeNodeRight = GetNodeAtPosisition(destinationNode.Pos + Vector2.right);
+            var freeNodeUp = GetNodeAtPosisition(destinationNode.Pos + Vector2.up);
+            var freeNodeDown = GetNodeAtPosisition(destinationNode.Pos + Vector2.down);
+
+            if (CheckFreeNode(freeNodeLeft, block) || CheckFreeNode(freeNodeRight, block) || CheckFreeNode(freeNodeUp, block) || CheckFreeNode(freeNodeDown, block))
+                return true;
+        }
+        return false;
+    }
+    private bool CheckFreeNode(Node freeNode, Block block)
+    {
+        bool condition = false;
+        if (freeNode != null)
+        {
+            if (freeNode.OccupiedBlock != null && freeNode.OccupiedBlock.CanMerge(block.Value))
+                condition = true;
+        }
+        return condition;
+    }
+
     private void GenerateBlock(Node node, int value)
     {
         Block block = Instantiate(_blockPrefab, node.Pos, Quaternion.identity);
@@ -91,6 +146,19 @@ public class GameManager : MonoBehaviour
         block.SetBlock(node);
         _blocks.Add(block);
     }
+
+    //=========================================GAME LOGIC=============================
+    private BlockType GetBlockTypeByValue(int value) => _types.First(t => t.Value == value);
+    private Node GetNodeAtPosisition(Vector2 pos) => _nodes.FirstOrDefault(n => n.Pos == pos);
+
+    private void HandleInput()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftArrow)) ShiftBlocks(Vector2.left);
+        else if (Input.GetKeyDown(KeyCode.RightArrow)) ShiftBlocks(Vector2.right);
+        else if (Input.GetKeyDown(KeyCode.UpArrow)) ShiftBlocks(Vector2.up);
+        else if (Input.GetKeyDown(KeyCode.DownArrow)) ShiftBlocks(Vector2.down);
+    }
+
     private void ShiftBlocks(Vector2 direction)
     {
         ChangeState(GameState.Moving);
@@ -99,7 +167,13 @@ public class GameManager : MonoBehaviour
         if (direction == Vector2.right || direction == Vector2.up)
             orderedBlocks.Reverse();
 
-        foreach (var block in orderedBlocks)
+        bool checkChange = CheckBlocks(orderedBlocks, direction);
+        HandleAnimation(orderedBlocks, checkChange);
+    }
+    private bool CheckBlocks(List<Block> blockList, Vector2 direction)
+    {
+        bool isChanged = false;
+        foreach (var block in blockList)
         {
             Node destinationNode = block.Node;
             do
@@ -109,29 +183,46 @@ public class GameManager : MonoBehaviour
                 if (freeNode != null)
                 {
                     if (freeNode.OccupiedBlock != null && freeNode.OccupiedBlock.CanMerge(block.Value))
+                    {
+                        isChanged = true;
                         block.MergeBlock(freeNode.OccupiedBlock);
+                    }
                     else if (freeNode.OccupiedBlock == null)
+                    {
+                        isChanged = true;
                         destinationNode = freeNode;
+                    }
                 }
             } while (destinationNode != block.Node);
         }
-
-        var sequence = DOTween.Sequence();
-        foreach (var block in orderedBlocks)
+        return isChanged;
+    }
+    private void HandleAnimation(List<Block> blockList, bool checkChange)
+    {
+        if (checkChange)
         {
-            var movePoint = block.MergingBlock != null ? block.MergingBlock.Node.Pos : block.Node.Pos;
-            sequence.Insert(0, block.transform.DOMove(movePoint, _moveDuration));
+            var sequence = DOTween.Sequence();
+            //Add animation
+            foreach (var block in blockList)
+            {
+                var movePoint = block.MergingBlock != null ? block.MergingBlock.Node.Pos : block.Node.Pos;
+                sequence.Insert(0, block.transform.DOMove(movePoint, _moveDuration));
+            }
+            //Run animation once it completed
+            sequence.OnComplete(() =>
+            {
+                foreach (var block in blockList.Where(block => block.MergingBlock != null))
+                    MergeBlocks(block.MergingBlock, block);
+
+                ChangeState(GameState.GenerateBlocks);
+                _textScoreUI.text = _score.ToString();
+            });
         }
-
-        sequence.OnComplete(() =>
-        {
-            foreach (var block in orderedBlocks.Where(block => block.MergingBlock != null))
-                MergeBlocks(block.MergingBlock, block);
-            ChangeState(GameState.GenerateBlocks);
-        });
+        else ChangeState(GameState.WaitingInput);
     }
     private void MergeBlocks(Block baseBlock, Block mergingBlock)
     {
+        _score++;
         GenerateBlock(baseBlock.Node, baseBlock.Value * 2);
 
         RemoveBlock(baseBlock);
@@ -141,6 +232,14 @@ public class GameManager : MonoBehaviour
     {
         _blocks.Remove(block);
         Destroy(block.gameObject);
+    }
+    //=========================================GAME OVER=============================
+
+    private void GameOver()
+    {
+        _buttonTryAgain.SetActive(true);
+        _blurredScreen.enabled = true;
+        _textGameOver.enabled = true;
     }
     private void ChangeState(GameState newState)
     {
@@ -157,12 +256,26 @@ public class GameManager : MonoBehaviour
                 break;
             case GameState.Moving:
                 break;
-            case GameState.Win:
-                break;
             case GameState.Lose:
+                GameOver();
                 break;
             default:
                 throw new System.ArgumentOutOfRangeException(nameof(newState), newState, null);
+        }
+    }
+
+    public void NewGame()
+    {
+        CheckBestScore();
+        SceneManager.LoadScene("SampleScene");
+    }
+    private void CheckBestScore()
+    {
+        CheckPlayerPrefs();
+        if (_score > _bestScore)
+        {
+            _bestScore = _score;
+            PlayerPrefs.SetInt("BestScore", _bestScore);
         }
     }
 }
@@ -180,6 +293,5 @@ public enum GameState
     GenerateBlocks,
     WaitingInput,
     Moving,
-    Win,
     Lose
 }

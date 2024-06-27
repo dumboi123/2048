@@ -326,6 +326,5 @@ MonoBehaviour:
   Value: 0
   Node: {fileID: 0}
   MergingBlock: {fileID: 0}
-  Merging: 0
   _renderer: {fileID: 6756161349840518070}
   _text: {fileID: 3287454824275516112}
